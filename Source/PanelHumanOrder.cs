@@ -233,18 +233,17 @@ public partial class PanelHumanOrder : UserControl
   private static Color HighlightCurrentBackColor()
   {
     var (h, s, l) = ToHsl(SystemColors.Highlight);
-    double hue = 50.0;            // yellow family
-    double sat = s * 0.20;        // current row: less desaturated
-    double lit = Clamp(l * 0.7 + 0.15, 0.0, 1.0);
+    double hue = 60.0;            // yellow
+    double sat = Math.Max(s * 0.45, 0.45);
+    double lit = 0.65;            // readable current-row tint
     return HslToColor(hue, sat, lit);
   }
 
   private static Color HighlightRowBackColor()
   {
-    var (h, s, l) = ToHsl(SystemColors.Highlight);
-    double hue = 50.0;            // yellow family
-    double sat = s * 0.08;        // non-current: pale tint
-    double lit = Clamp(l * 0.5 + 0.40, 0.0, 1.0);
+    double hue = 60.0;            // yellow
+    double sat = 0.20;            // pale
+    double lit = 0.92;            // much brighter = highlight, no desaturation penalty
     return HslToColor(hue, sat, lit);
   }
 
