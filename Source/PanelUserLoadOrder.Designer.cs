@@ -20,8 +20,10 @@ private TableLayoutPanel TopPanel;
     private FlowLayoutPanel ButtonPanel;
     private Button Mod1BeforeMod2Button;
     private Button Mod1AfterMod2Button;
-    private Button Mod1ConflictsMod2Button;
+     private Button Mod1ConflictsMod2Button;
     private Button DeleteButton;
+    private Button Mod1ToTopButton;
+    private Button Mod1ToBottomButton;
 
     protected override void Dispose(bool disposing)
     {
@@ -48,6 +50,8 @@ private TableLayoutPanel TopPanel;
     Mod1BeforeMod2Button = new Button();
     Mod1ConflictsMod2Button = new Button();
     DeleteButton = new Button();
+    Mod1ToTopButton = new Button();
+    Mod1ToBottomButton = new Button();
     MainTable.SuspendLayout();
     TopPanel.SuspendLayout();
     SearchPanel.SuspendLayout();
@@ -200,6 +204,9 @@ private TableLayoutPanel TopPanel;
     ButtonPanel.Controls.Add(Mod1BeforeMod2Button);
     ButtonPanel.Controls.Add(Mod1ConflictsMod2Button);
     ButtonPanel.Controls.Add(DeleteButton);
+    ButtonPanel.Controls.Add(Mod1ConflictsMod2Button);
+    ButtonPanel.Controls.Add(Mod1ToBottomButton);
+    ButtonPanel.Controls.Add(Mod1ToTopButton);
     ButtonPanel.Dock = DockStyle.Fill;
     ButtonPanel.FlowDirection = FlowDirection.RightToLeft;
     ButtonPanel.Location = new Point(15, 621);
@@ -246,6 +253,26 @@ private TableLayoutPanel TopPanel;
     DeleteButton.TabIndex = 2;
     DeleteButton.Text = "Delete";
     DeleteButton.UseVisualStyleBackColor = true;
+    // 
+    // Mod1ToTopButton
+    // 
+    Mod1ToTopButton.AutoSize = true;
+    Mod1ToTopButton.Location = new Point(799, 3);
+    Mod1ToTopButton.Name = "Mod1ToTopButton";
+    Mod1ToTopButton.Size = new Size(128, 25);
+    Mod1ToTopButton.TabIndex = 3;
+    Mod1ToTopButton.Text = "move to top";
+    Mod1ToTopButton.UseVisualStyleBackColor = true;
+    // 
+    // Mod1ToBottomButton
+    // 
+    Mod1ToBottomButton.AutoSize = true;
+    Mod1ToBottomButton.Location = new Point(671, 3);
+    Mod1ToBottomButton.Name = "Mod1ToBottomButton";
+    Mod1ToBottomButton.Size = new Size(128, 25);
+    Mod1ToBottomButton.TabIndex = 4;
+    Mod1ToBottomButton.Text = "move to bottom";
+    Mod1ToBottomButton.UseVisualStyleBackColor = true;
     // 
     // PanelUserLoadOrder
     // 

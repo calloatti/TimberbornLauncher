@@ -28,6 +28,8 @@ public partial class PanelUserLoadOrder : UserControl
         Mod1AfterMod2Button.Click += Mod1AfterMod2Button_Click;
         Mod1ConflictsMod2Button.Click += Mod1ConflictsMod2Button_Click;
         DeleteButton.Click += DeleteButton_Click;
+        Mod1ToTopButton.Click += Mod1ToTopButton_Click;
+        Mod1ToBottomButton.Click += Mod1ToBottomButton_Click;
         LoadAll();
     }
 
@@ -257,5 +259,21 @@ public partial class PanelUserLoadOrder : UserControl
         string mod2Id = drv2.Row["Id"]?.ToString()!;
         AppDatabase.InsertUserConflict(mod1Id, mod2Id);
         ReloadDepsGrid();
+    }
+
+    private void Mod1ToTopButton_Click(object? sender, EventArgs e)
+    {
+        if (ModsGrid1.CurrentRow?.DataBoundItem is not DataRowView drv) return;
+        string modId = drv.Row["Id"]?.ToString()!;
+        if (AppDatabase.InsertUserLoadExtreme(modId, "top"))
+            ReloadDepsGrid();
+    }
+
+    private void Mod1ToBottomButton_Click(object? sender, EventArgs e)
+    {
+        if (ModsGrid1.CurrentRow?.DataBoundItem is not DataRowView drv) return;
+        string modId = drv.Row["Id"]?.ToString()!;
+        if (AppDatabase.InsertUserLoadExtreme(modId, "bottom"))
+            ReloadDepsGrid();
     }
 }

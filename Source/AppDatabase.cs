@@ -297,6 +297,61 @@ public static class AppDatabase
     }
 
     /// <summary>
+    /// Returns mod_id -> load-extreme rule ("top"/"bottom") for every selected mod.
+    /// These are not dependency edges — the sorter relocates mods to the nearest
+    /// top/bottom slot that still respects their own deps and their dependents.
+    /// </summary>
+    public static Dictionary<string, string> GetUserLoadExtremes()
+    {
+        var extremes = new Dictionary<string, string>();
+        using var cmd = _connection!.CreateCommand();
+        cmd.CommandText = """
+            SELECT d.mod_id, d.dependency_type
+            FROM user_dependencies d
+            WHERE d.dependency_type IN ('top', 'bottom');
+            """;
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            string modId = reader.GetString(0);
+            string type = reader.GetString(1);
+            // top wins if both present
+            if (!extremes.TryGetValue(modId, out _))
+                extremes[modId] = type;
+        }
+        return extremes;
+    }
+
+    /// <summary>
+    /// Adds a load-extreme rule (mod_id, 'top'/'bottom', "") for a mod. Blocks the insert
+    /// and shows a MessageBox if the opposite extreme is already pinned, since a mod cannot
+    /// be both "top" and "bottom" at once.
+    /// </summary>
+    public static bool InsertUserLoadExtreme(string modId, string type)
+    {
+        if (modId == null) throw new ArgumentNullException(nameof(modId));
+        if (type != "top" && type != "bottom")
+            throw new ArgumentException("type must be 'top' or 'bottom'", nameof(type));
+
+        string other = type == "top" ? "bottom" : "top";
+        string otherKey = ComputeUserDependencyKey(modId, other, "");
+
+        using var existsCmd = _connection!.CreateCommand();
+        existsCmd.CommandText = "SELECT COUNT(*) FROM user_dependencies WHERE hash = @h;";
+        existsCmd.Parameters.AddWithValue("@h", otherKey);
+        if (Convert.ToInt32(existsCmd.ExecuteScalar()) > 0)
+        {
+            MessageBox.Show(
+                $"\"{modId}\" already has a {other} rule. Remove it before pinning to {type}.",
+                "Conflicting Load Position", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
+
+        InsertUserDependency(modId, type, "");
+        return true;
+    }
+
+    /// <summary>
     /// Adds a conflict rule (mod1, 'conflicts', mod2). Conflict is symmetric, so the same
     /// pair in either direction is treated as a duplicate and rejected.
     /// </summary>
@@ -364,7 +419,7 @@ public static class AppDatabase
     {
         var edges = new List<(string From, string To)>();
         using var cmd = _connection!.CreateCommand();
-        cmd.CommandText = "SELECT mod_id, dependency_id FROM user_dependencies WHERE dependency_type != 'conflicts';";
+        cmd.CommandText = "SELECT mod_id, dependency_id FROM user_dependencies WHERE dependency_type NOT IN ('conflicts','top','bottom');";
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
             edges.Add((reader.GetString(0), reader.GetString(1)));

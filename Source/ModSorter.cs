@@ -154,6 +154,13 @@ public static class ModSorter
     List<ModRow> ordered = SortByDependencies(
         allMods.OrderBy(mod => mod.DisplayName, StringComparer.CurrentCulture));
 
+    // Honor user-defined top/bottom rules: relocate each flagged mod to the nearest
+    // extreme slot that still keeps its own dependencies BEFORE it and its
+    // dependents AFTER it. top/bottom rows are not dependency edges (their
+    // dependency_id is "" and is skipped above), so they must not constrain the
+    // topological sort itself — they only reprioritize the finished order.
+    ApplyLoadExtremes(ordered);
+
     // ---- CHANGED: write priority using mod_path ----
     int rank = 0;
     foreach (ModRow mod in ordered)
@@ -164,6 +171,46 @@ public static class ModSorter
     }
     _lastComputedUserDepsTimestamp = dbValue;
     Log.Info($"Mod sort: wrote priorities for {ordered.Count} mods");
+  }
+
+  private static void ApplyLoadExtremes(List<ModRow> ordered)
+  {
+    Dictionary<string, string> extremes = AppDatabase.GetUserLoadExtremes();
+    if (extremes.Count == 0) return;
+
+    // mod_id => list of mod_ids that depend on it (must load AFTER it)
+    var dependents = new Dictionary<string, List<ModRow>>();
+    foreach (ModRow mod in ordered)
+    {
+      foreach (string depId in mod.Dependencies)
+      {
+        if (depId == mod.ModId) continue;
+        if (!dependents.TryGetValue(depId, out var list)) { list = new List<ModRow>(); dependents[depId] = list; }
+        list.Add(mod);
+      }
+    }
+
+    // Process 'top' mods first, in their existing order, moving each toward the front.
+    foreach (ModRow mod in ordered.ToList())
+    {
+      if (!extremes.TryGetValue(mod.ModId, out string? rule) || rule != "top") continue;
+      ordered.Remove(mod);
+      int floor = mod.Dependencies.Any()
+        ? ordered.FindIndex(m => mod.Dependencies.Contains(m.ModId)) : -1;
+      int target = floor >= 0 ? floor + 1 : 0;
+      ordered.Insert(target, mod);
+    }
+
+    // Then 'bottom' mods toward the rear — must stay before any of their dependents.
+    foreach (ModRow mod in ordered.ToList())
+    {
+      if (!extremes.TryGetValue(mod.ModId, out string? rule) || rule != "bottom") continue;
+      ordered.Remove(mod);
+      int ceiling = dependents.TryGetValue(mod.ModId, out var list) && list.Count > 0
+        ? ordered.FindIndex(m => list.Contains(m)) : -1;
+      int target = ceiling >= 0 ? ceiling : ordered.Count;
+      ordered.Insert(target, mod);
+    }
   }
 
   private static List<ModRow> SortByDependencies(IEnumerable<ModRow> mods)
