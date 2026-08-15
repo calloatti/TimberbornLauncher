@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - run: dotnet publish -c Release --nologo
+
+      - name: Create release package
+        run: |
+          $publishDir = "bin\Release\net8.0-windows\win-x64\publish"
+          $packageDir = "TimberbornLauncher-$($env:GITHUB_REF_NAME)"
+          New-Item -ItemType Directory -Path $packageDir -Force
+          Copy-Item "$publishDir\*" "$packageDir\"
+          Compress-Archive -Path "$packageDir\*" -DestinationPath "$packageDir.zip"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: TimberbornLauncher-*.zip

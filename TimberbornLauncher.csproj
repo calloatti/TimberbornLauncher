@@ -11,6 +11,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon />
     <StartupObject>TimberbornLauncher.Program</StartupObject>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
