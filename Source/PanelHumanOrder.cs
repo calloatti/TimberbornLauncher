@@ -11,12 +11,14 @@ public partial class PanelHumanOrder : UserControl
 
   private DataTable _modsTable = new();
   private BindingSource _modsBinding = new();
+  private string? _highlightQuery;
 
   public PanelHumanOrder()
   {
     InitializeComponent();
     BuildColumns();
     ModsGrid.Layout += ModsGrid_Layout;
+    ModsGrid.CellFormatting += ModsGrid_CellFormatting;
     VisibleChanged += PanelHumanOrder_VisibleChanged;
     LoadMods();
   }
@@ -159,12 +161,20 @@ public partial class PanelHumanOrder : UserControl
     if (ModsGrid.CurrentRow?.DataBoundItem is DataRowView drv)
       selectedPath = drv.Row.Field<string>("mod_path");
 
-    string query = SearchTextBox.Text.Trim();
+    string search = SearchTextBox.Text.Trim();
+    bool highlight = search.StartsWith("@");
+    string term = highlight ? search[1..].Trim() : search;
+
+    if (!highlight || term.Length == 0)
+      _highlightQuery = null;
+    else
+      _highlightQuery = term;
+
     string[] parts = new string[3];
     int count = 0;
 
-    if (query.Length > 0)
-      parts[count++] = $"Name LIKE '%{EscapeLike(query)}%' OR Id LIKE '%{EscapeLike(query)}%' OR Source LIKE '%{EscapeLike(query)}%'";
+    if (!highlight && term.Length > 0)
+      parts[count++] = $"Name LIKE '%{EscapeLike(term)}%' OR Id LIKE '%{EscapeLike(term)}%' OR Source LIKE '%{EscapeLike(term)}%'";
 
     bool localChecked = LocalFilterChk.Checked;
     bool steamChecked = SteamFilterChk.Checked;
@@ -181,10 +191,105 @@ public partial class PanelHumanOrder : UserControl
       parts[count++] = $"Enabled = '{AppDatabase.CharDisabled}'";
 
     _modsBinding.Filter = count > 0 ? string.Join(" AND ", parts.Take(count)) : null;
+    ModsGrid.Invalidate(); // repaint to apply/clear row highlights
 
     if (selectedPath != null)
       RestoreSelection(selectedPath);
   }
+
+  private void ModsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+  {
+    if (string.IsNullOrEmpty(_highlightQuery) || e.RowIndex < 0 || e.ColumnIndex < 0) return;
+
+    if (ModsGrid.Rows[e.RowIndex].DataBoundItem is not DataRowView drv) return;
+    if (drv.Row is null) return;
+    DataRow row = drv.Row;
+
+    string id   = row.Field<string>("Id") ?? "";
+    string name = row.Field<string>("Name") ?? "";
+    string src  = row.Field<string>("Source") ?? "";
+
+    bool isHit = id.Contains(_highlightQuery, StringComparison.OrdinalIgnoreCase)
+      || name.Contains(_highlightQuery, StringComparison.OrdinalIgnoreCase)
+      || src.Contains(_highlightQuery, StringComparison.OrdinalIgnoreCase);
+    if (isHit)
+    {
+      bool selected = ModsGrid.Rows[e.RowIndex].Selected;
+      e.CellStyle!.BackColor = selected
+        ? HighlightCurrentBackColor()
+        : HighlightRowBackColor();
+    }
+  }
+
+  // Both colors are derived from the system highlight color: hue shifted toward
+  // yellow, saturation reduced (less saturated = matching rows), luminance kept.
+  private static Color HighlightCurrentBackColor()
+  {
+    var (h, s, l) = ToHsl(SystemColors.Highlight);
+    double hue = 50.0;            // yellow family
+    double sat = s * 0.20;        // current row: less desaturated
+    double lit = Clamp(l * 0.7 + 0.15, 0.0, 1.0);
+    return HslToColor(hue, sat, lit);
+  }
+
+  private static Color HighlightRowBackColor()
+  {
+    var (h, s, l) = ToHsl(SystemColors.Highlight);
+    double hue = 50.0;            // yellow family
+    double sat = s * 0.08;        // non-current: pale tint
+    double lit = Clamp(l * 0.5 + 0.40, 0.0, 1.0);
+    return HslToColor(hue, sat, lit);
+  }
+
+  private static (double h, double s, double l) ToHsl(Color c)
+  {
+    double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+    double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
+    double l = (max + min) / 2.0;
+    double s, h;
+    if (max == min)
+    {
+      h = s = 0.0;
+    }
+    else
+    {
+      double d = max - min;
+      s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+      h = max switch
+      {
+        double v when v == r => (g - b) / d + (g < b ? 6.0 : 0.0),
+        double v when v == g => (b - r) / d + 2.0,
+        _ => (r - g) / d + 4.0,
+      };
+      h *= 60.0;
+    }
+    return (h, s, l);
+  }
+
+  private static Color HslToColor(double h, double s, double l)
+  {
+    if (s < 0) s = 0; if (s > 1) s = 1;
+    if (l < 0) l = 0; if (l > 1) l = 1;
+    double c = (1 - Math.Abs(2 * l - 1)) * s;
+    double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
+    double m = l - c / 2.0;
+    (double r1, double g1, double b1) = h switch
+    {
+      < 60  => (c, x, 0.0),
+      < 120 => (x, c, 0.0),
+      < 180 => (0.0, c, x),
+      < 240 => (0.0, x, c),
+      < 300 => (x, 0.0, c),
+      _     => (c, 0.0, x)
+    };
+    int r = (int)Math.Round((r1 + m) * 255);
+    int g = (int)Math.Round((g1 + m) * 255);
+    int b = (int)Math.Round((b1 + m) * 255);
+    return Color.FromArgb(Clamp(r, 0, 255), Clamp(g, 0, 255), Clamp(b, 0, 255));
+  }
+
+  private static int Clamp(double v, int lo, int hi) => Math.Max(lo, Math.Min(hi, (int)Math.Round(v)));
+  private static double Clamp(double v, double lo, double hi) => Math.Max(lo, Math.Min(hi, v));
 
   private static string EscapeLike(string s) =>
       s.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
