@@ -216,86 +216,20 @@ public partial class PanelHumanOrder : UserControl
     {
       if (ModsGrid.Rows[e.RowIndex].Selected)
       {
-        Color c = HighlightCurrentBackColor();
-        e.CellStyle!.BackColor = c;
-        e.CellStyle.SelectionBackColor = c;
-        e.CellStyle.SelectionForeColor = Color.White;
-      }
-      else
-      {
-        e.CellStyle!.BackColor = HighlightRowBackColor();
-      }
-    }
-  }
+         Color c = HighlightCurrentBackColor;
+         e.CellStyle!.BackColor = c;
+         e.CellStyle.SelectionBackColor = c;
+         e.CellStyle.SelectionForeColor = Color.Black;
+       }
+       else
+       {
+         e.CellStyle!.BackColor = HighlightRowBackColor;
+       }
+     }
+   }
 
-  // Both colors are derived from the system highlight color: hue shifted toward
-  // yellow, saturation reduced (less saturated = matching rows), luminance kept.
-  private static Color HighlightCurrentBackColor()
-  {
-    var (h, s, l) = ToHsl(SystemColors.Highlight);
-    double hue = 60.0;            // yellow
-    double sat = Math.Max(s * 0.45, 0.45);
-    double lit = 0.65;            // readable current-row tint
-    return HslToColor(hue, sat, lit);
-  }
-
-  private static Color HighlightRowBackColor()
-  {
-    double hue = 60.0;            // yellow
-    double sat = 0.20;            // pale
-    double lit = 0.92;            // much brighter = highlight, no desaturation penalty
-    return HslToColor(hue, sat, lit);
-  }
-
-  private static (double h, double s, double l) ToHsl(Color c)
-  {
-    double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
-    double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
-    double l = (max + min) / 2.0;
-    double s, h;
-    if (max == min)
-    {
-      h = s = 0.0;
-    }
-    else
-    {
-      double d = max - min;
-      s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
-      h = max switch
-      {
-        double v when v == r => (g - b) / d + (g < b ? 6.0 : 0.0),
-        double v when v == g => (b - r) / d + 2.0,
-        _ => (r - g) / d + 4.0,
-      };
-      h *= 60.0;
-    }
-    return (h, s, l);
-  }
-
-  private static Color HslToColor(double h, double s, double l)
-  {
-    if (s < 0) s = 0; if (s > 1) s = 1;
-    if (l < 0) l = 0; if (l > 1) l = 1;
-    double c = (1 - Math.Abs(2 * l - 1)) * s;
-    double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
-    double m = l - c / 2.0;
-    (double r1, double g1, double b1) = h switch
-    {
-      < 60  => (c, x, 0.0),
-      < 120 => (x, c, 0.0),
-      < 180 => (0.0, c, x),
-      < 240 => (0.0, x, c),
-      < 300 => (x, 0.0, c),
-      _     => (c, 0.0, x)
-    };
-    int r = (int)Math.Round((r1 + m) * 255);
-    int g = (int)Math.Round((g1 + m) * 255);
-    int b = (int)Math.Round((b1 + m) * 255);
-    return Color.FromArgb(Clamp(r, 0, 255), Clamp(g, 0, 255), Clamp(b, 0, 255));
-  }
-
-  private static int Clamp(double v, int lo, int hi) => Math.Max(lo, Math.Min(hi, (int)Math.Round(v)));
-  private static double Clamp(double v, double lo, double hi) => Math.Max(lo, Math.Min(hi, v));
+  private static readonly Color HighlightCurrentBackColor = Color.FromArgb(214, 215, 0);
+  private static readonly Color HighlightRowBackColor   = Color.FromArgb(255, 255, 180);
 
   private static string EscapeLike(string s) =>
       s.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]");
