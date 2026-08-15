@@ -214,10 +214,17 @@ public partial class PanelHumanOrder : UserControl
       || src.Contains(_highlightQuery, StringComparison.OrdinalIgnoreCase);
     if (isHit)
     {
-      bool selected = ModsGrid.Rows[e.RowIndex].Selected;
-      e.CellStyle!.BackColor = selected
-        ? HighlightCurrentBackColor()
-        : HighlightRowBackColor();
+      if (ModsGrid.Rows[e.RowIndex].Selected)
+      {
+        Color c = HighlightCurrentBackColor();
+        e.CellStyle!.BackColor = c;
+        e.CellStyle.SelectionBackColor = c;
+        e.CellStyle.SelectionForeColor = Color.White;
+      }
+      else
+      {
+        e.CellStyle!.BackColor = HighlightRowBackColor();
+      }
     }
   }
 
