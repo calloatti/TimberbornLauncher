@@ -140,7 +140,7 @@ public partial class PanelUserLoadOrder : UserControl
 
         ModsGrid1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         if (ModsGrid1.Rows.Count > 0)
-            ModsGrid1.CurrentCell = ModsGrid1.Rows[0].Cells["Name"];
+            ModsGrid1.CurrentCell = ModsGrid1.Rows[0].Cells["Enabled"];
     }
 
     private void ModsGrid2_Layout(object? sender, LayoutEventArgs e)
@@ -163,7 +163,7 @@ public partial class PanelUserLoadOrder : UserControl
 
         ModsGrid2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         if (ModsGrid2.Rows.Count > 0)
-            ModsGrid2.CurrentCell = ModsGrid2.Rows[0].Cells["Name"];
+            ModsGrid2.CurrentCell = ModsGrid2.Rows[0].Cells["Enabled"];
     }
 
     private void DependenciesGrid_Layout(object? sender, LayoutEventArgs e)

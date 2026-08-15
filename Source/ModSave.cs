@@ -57,9 +57,10 @@ public static class ModSave
         string workingDir = Path.GetDirectoryName(executable) ?? "";
         Log.Launch(executable, workingDir, args);
 
+        ProcessStartInfo? startInfo = null;
         try
         {
-            var startInfo = new ProcessStartInfo
+            startInfo = new ProcessStartInfo
             {
                 FileName = executable,
                 WorkingDirectory = workingDir,
@@ -92,12 +93,12 @@ public static class ModSave
                     "Timberborn Launcher", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             Process.Start(startInfo);
-            Log.Info($"Launched {executable} with args: {args}");
+            Log.Info($"Launched {executable} with args: {string.Join(" ", startInfo.ArgumentList)}");
             owner.Close();
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to start game: {executable} {args}", ex);
+            Log.Error($"Failed to start game: {executable} {string.Join(" ", startInfo?.ArgumentList ?? Enumerable.Empty<string>())}", ex);
             MessageBox.Show(owner, "Failed to start the game:\n" + ex.Message, "Timberborn Launcher",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }

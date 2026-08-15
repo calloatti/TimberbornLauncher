@@ -53,7 +53,7 @@ public partial class PanelGameLoadOrder : UserControl
         ModsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
         if (ModsGrid.Rows.Count > 0)
-            ModsGrid.CurrentCell = ModsGrid.Rows[0].Cells["Name"];
+            ModsGrid.CurrentCell = ModsGrid.Rows[0].Cells["Enabled"];
     }
 
     // WARNING: This column sizing logic is final and correct. It uses AllCells to measure content,
@@ -206,7 +206,7 @@ public partial class PanelGameLoadOrder : UserControl
             if (drv.Row.Field<string>("mod_path") == modPath)
             {
                 row.Selected = true;
-                ModsGrid.CurrentCell = row.Cells["Name"];
+                ModsGrid.CurrentCell = row.Cells["Enabled"];
                 int first = Math.Max(0, Math.Min(row.Index - ModsGrid.DisplayedRowCount(true) / 2, ModsGrid.Rows.Count - 1));
                 ModsGrid.FirstDisplayedScrollingRowIndex = first;
                 return true;
